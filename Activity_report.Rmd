@@ -26,7 +26,7 @@ head(AM_data)
 
 ### Total Number of Steps taken per day.
 
-```{r results='hide'}
+```{r results='hide', cache=TRUE}
 library(dplyr)
 ```
 
@@ -40,12 +40,14 @@ daily_tot <- AM_data %>%
 hist(daily_tot$tot_steps, 
      xlab = "Total no of steps per day", ylab = "Frequency", main = "Histogram of Total Number of Steps Taken per Day", col = "coral")
 ```
+
 **To calculate the mean and median of the total number of steps taken per day**
+
 ```{r}
 tot_mean <- mean(daily_tot$tot_steps)
 tot_median <- median(daily_tot$tot_steps)
 ```
-*The average of the total number of steps taken per day is`r tot_mean` while the median value is `r tot_median`!*
+The average of the total number of steps taken per day is **`r tot_mean`** while the median value is **`r tot_median`!**
 
 ### Average daily activity pattern
 1. Make a time series plot (i.e type = "l"|}type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
@@ -73,7 +75,7 @@ Sometimes, having missing values in a data set can throw all the analysis off. T
 ##First, count the total number of missing values
 tot_missing <- sum(is.na(AM_data$steps))
 ```
-*The total number of missing values (i.e rows with NA) is `r tot_missing`*
+The total number of missing values (i.e rows with NA) is **`r tot_missing`**  
 Now, devise a strategy for filling in all of the missing values in the dataset
 
 ```{r}
