@@ -1,0 +1,79 @@
+---
+title: "RR_Activity_Monitoring"
+author: "Bakintu"
+date: "6/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+First, need to load the dataset containing the activity monitoring data
+```{r load data}
+link <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+download.file(link, destfile = "activitymonitoring.zip")
+unzip("activitymonitoring.zip")
+AM_data <- read.csv("./activity.csv")
+
+##To check the data
+head(AM_data)
+```
+
+### Total Number of Steps taken per day.
+
+```{r results='hide'}
+library(dplyr)
+```
+
+```{r}
+daily_tot <- AM_data %>%
+  group_by(date) %>%
+  summarize(tot_steps = sum(steps, na.rm = TRUE))
+```
+**Make a histogram of the total number of steps taken each day**
+```{r histogram, fig.height= 6, fig.width= 8}
+hist(daily_tot$tot_steps, 
+     xlab = "Total no of steps per day", ylab = "Frequency", main = "Histogram of Total Number of Steps Taken per Day", col = "coral")
+```
+**To calculate the mean and median of the total number of steps taken per day**
+```{r}
+tot_mean <- mean(daily_tot$tot_steps)
+tot_median <- median(daily_tot$tot_steps)
+```
+*The average of the total number of steps taken per day is`r tot_mean` while the median value is `r tot_median`!*
+
+### Average daily activity pattern
+1. Make a time series plot (i.e type = "l"|}type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+```{r fig.width=8, fig.height=6}
+##First, group the activity data set by the interval, then calculate the mean of the groups while ignoring the NAs
+interval_mean <- AM_data %>%
+  group_by(interval) %>%
+  summarize(step_avg = mean(steps, na.rm = TRUE))
+
+##Make time series plot
+plot(interval_mean$interval, interval_mean$step_avg, type = "l", 
+     xlab = "5-minute interval", ylab = "Average number of steps taken",
+     main = "Time Series of Average Number of Steps Taken")
+```
+
+**Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?**
+```{r}
+interval_mean$interval[which.max(interval_mean$step_avg)]
+```
+
+### Imputing missing values
+Sometimes, having missing values in a data set can throw all the analysis off. This is because there might be different variables that might have caused the NAs. One has to make a decision on how to deal with the missing values. In this case, all missing values will be replaced with the daily means and the total mean will be compared to the value previously reported.
+
+```{r}
+##First, count the total number of missing values
+tot_missing <- sum(is.na(AM_data$steps))
+```
+*The total number of missing values (i.e rows with NA) is `r tot_missing`*
+Now, devise a strategy for filling in all of the missing values in the dataset
+
+```{r}
