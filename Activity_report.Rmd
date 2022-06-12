@@ -11,9 +11,7 @@ knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 
 ## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-First, need to load the dataset containing the activity monitoring data
+First, need to load the data set containing the activity monitoring data
 ```{r load data}
 link <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 download.file(link, destfile = "activitymonitoring.zip")
@@ -76,6 +74,75 @@ Sometimes, having missing values in a data set can throw all the analysis off. T
 tot_missing <- sum(is.na(AM_data$steps))
 ```
 The total number of missing values (i.e rows with NA) is **`r tot_missing`**  
-Now, devise a strategy for filling in all of the missing values in the dataset
+Now, devise a strategy for filling in all of the missing values in the data set. Plan to replace the missing values with the mean of the daily 5-minute time interval.  
+Create a new data set where all the missing values are replaced with the mean of the daily 5-minute time interval.
 
 ```{r}
+##make a copy of the original activity data set
+up_AM_data <- AM_data
+
+##Make a loop to replace every NA with the mean of the daily 5-minute time interval
+for (i in interval_mean$interval) {
+  up_AM_data[up_AM_data$interval == i & 
+    is.na(up_AM_data$steps), ]$steps <- interval_mean$step_avg[
+      interval_mean$interval == i 
+    ]
+}
+head(up_AM_data)
+
+##Check if there is any missing value left
+sum(is.na(up_AM_data))
+```
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?  
+
+```{r fig.height=6, fig.width=9}
+##calculate the daily total steps
+up_daily_tot <- up_AM_data %>%
+  group_by(date) %>%
+  summarize(up_tot_steps = sum(steps))
+
+##Create an histogram of the new dataset
+hist(up_daily_tot$up_tot_steps, xlab = "Total Number of Steps per day (without missing values)", ylab = "Frequency", main = "Histogram of Total Steps per Day (without missing values", col = "coral")
+
+##Calculate the mean and median of the total steps taken
+mean_upData <- mean(up_daily_tot$up_tot_steps)
+med_upData <- median(up_daily_tot$up_tot_steps)
+```
+The mean of the new data set(with all missing values replaced with the mean of the daily 5-minute time interval) is `r mean_upData` while the median is `r med_upData`.  
+In comparison to the mean **(`r tot_mean`)** and the median **(`r tot_median`)** calculated for the data set where the missing values were ignored, the mean and median of the data set with missing values imputed are significantly higher, especially for the mean. The newly calculated mean and median are the same. This is because the missing values were replaced with the mean of of the daily 5-minute interval. With this replacement, many daily step values are the same. 
+
+## Difference in activity patterns between weekdays and weekends
+Will use the new data set with the imputed missing values.
+```{r}
+##Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+up_AM_data$Day <- weekdays(as.Date(up_AM_data$date))
+
+##Indicate "weekday" or "weekend"
+up_AM_data$Week <- ""
+up_AM_data[up_AM_data$Day == "Saturday" | up_AM_data$Day == 
+             "Sunday", ]$Week <- "Weekend"
+up_AM_data[!(up_AM_data$Day == "Saturday" | up_AM_data$Day == 
+             "Sunday"), ]$Week <- "Weekday"
+```
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis)
+
+```{r results='hide'}
+##Will use lattice
+library(lattice)
+library(ggplot2)
+```
+
+```{r fig.height=10, fig.width=6}
+##First, group the data by 5-minute interval and take the average
+up_int_mean <- up_AM_data %>%
+  group_by(interval, Week) %>%
+  summarize(avg_step = mean(steps))
+
+ggplot(up_int_mean, aes(interval, avg_step, color=Week)) +
+  geom_line() +
+  facet_wrap(~Week, nrow = 2) +
+  labs(x = "5-minute Time Interval", y = "Average Steps Taken") +
+  ggtitle("Comparison Time Series of Average Steps between Weekdays and Weekends")
+```
+
+From the panel plot above, the average steps taken between the first 1000 minute is significantly in weekdays compared to weekends. Apart from this, the weekend has higher average steps taken per 5-minute time interval compared to the weekday. 
